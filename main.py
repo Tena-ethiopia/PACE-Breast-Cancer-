@@ -5,14 +5,13 @@ import pandas as pd
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
-
-from model import Model
-from tools.postprocess import postprocess_segmentation, postprocess_classification
+from model import MultiTaskModel
+from tools.Postprocess import postprocess_segmentation, postprocess_classification
 from tools.preprocess import preprocess_classification, preprocess_segmentation
 
 def load_model(checkpoint_path, device):
     """Load the trained model from checkpoint."""
-    model = Model()
+    model = MultiTaskModel()
     checkpoint = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
@@ -48,7 +47,7 @@ def run_segmentation(model, input_dir, output_dir, device):
             
             
             # Run inference
-            seg_output, _ = model(image_path, task='segmentation')
+            seg_output, _ = model(image_path)
             
             # Postprocess segmentation
             mask = postprocess_segmentation(seg_output)
@@ -82,7 +81,7 @@ def run_classification(model, input_dir, output_dir, device):
             
             
             # Run inference
-            _, cls_output = model(image_path, task='classification')
+            _, cls_output = model(image_path)
             
             # Postprocess classification
             predicted_label = postprocess_classification(cls_output)
@@ -119,7 +118,7 @@ def main(input_dir, output_dir, task, device_type):
         print("Using CPU")
     
     # Load model
-    checkpoint_path = os.path.join('checkpoints', 'best_model.pth')
+    checkpoint_path = os.path.join('checkpoints', 'best_multitask_model.pth')
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Model checkpoint not found at {checkpoint_path}")
     
