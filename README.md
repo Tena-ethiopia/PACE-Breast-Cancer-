@@ -41,7 +41,7 @@ This Docker container runs a multi-task deep learning model for ultrasound image
 ├── main.py                 # Main inference script
 ├── model.py               # Model architecture
 ├── checkpoints/           # Model weights directory
-│   └── best_model.pth    # Trained model checkpoint
+│   └── best_multitask_model.pth    # Trained model checkpoint
 └── tools/                # Preprocessing and postprocessing utilities
     ├── preprocess.py
     └── postprocess.py
