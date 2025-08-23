@@ -1,6 +1,6 @@
 FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
 
-LABEL authors="YOUR_NAME"
+LABEL authors="Remla Habib, Bilkes Elias , Muhammad Hassen , Aways Adbiwahid"
 
 # Set working directory
 WORKDIR /app
