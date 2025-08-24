@@ -9,14 +9,16 @@ from model import MultiTaskModel
 from tools.Postprocess import postprocess_segmentation, postprocess_classification
 from tools.preprocess import preprocess_classification, preprocess_segmentation
 
+
 def load_model(checkpoint_path, device):
     """Load the trained model from checkpoint."""
     model = MultiTaskModel()
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    state_dict = torch.load(checkpoint_path, map_location=device)
+    model.load_state_dict(state_dict)   # no ['model_state_dict'] here
     model.to(device)
     model.eval()
     return model
+
 
 
 def get_image_files(input_dir):
@@ -32,36 +34,33 @@ def get_image_files(input_dir):
     return image_files
 
 
+
 def run_segmentation(model, input_dir, output_dir, device):
-    """Run segmentation task and save masks."""
     seg_output_dir = os.path.join(output_dir, 'segmentation')
     os.makedirs(seg_output_dir, exist_ok=True)
     
     image_files = get_image_files(input_dir)
-    
     print(f"Processing {len(image_files)} images for segmentation...")
     
     with torch.no_grad():
         for image_path in tqdm(image_files, desc="Segmentation"):
-            # Load and preprocess image
-            
-            
-            # Run inference
-            seg_output, _ = model(image_path)
-            
-            # Postprocess segmentation
+            # ✅ Load and preprocess image
+            img_tensor, orig_size = preprocess_segmentation(image_path, device)
+
+            seg_output, _ = model(img_tensor)
+
             mask = postprocess_segmentation(seg_output)
-            
-            # Save mask with same filename as input
+
+            # Resize back to original size
+            mask = Image.fromarray((mask * 255).astype(np.uint8))
+            mask = mask.resize(orig_size)
+            # Save mask
             image_name = os.path.basename(image_path)
             mask_name = image_name.replace('.png', '_mask.png')
-            mask_path = os.path.join(seg_output_dir, mask_name)
-            
-            # Convert mask to PIL Image and save
-            mask_pil = Image.fromarray((mask * 255).astype(np.uint8))
-            mask_pil.save(mask_path)
+            mask.save(os.path.join(seg_output_dir, mask_name))
     
     print(f"Segmentation masks saved to: {seg_output_dir}")
+
 
 
 def run_classification(model, input_dir, output_dir, device):
@@ -70,18 +69,17 @@ def run_classification(model, input_dir, output_dir, device):
     os.makedirs(cls_output_dir, exist_ok=True)
     
     image_files = get_image_files(input_dir)
-    
     print(f"Processing {len(image_files)} images for classification...")
     
     results = []
     
     with torch.no_grad():
         for image_path in tqdm(image_files, desc="Classification"):
-            # Load and preprocess image
-            
-            
-            # Run inference
-            _, cls_output = model(image_path)
+            # ✅ Load and preprocess image
+            img_tensor = preprocess_classification(image_path, device)
+
+            _, cls_output = model(img_tensor)
+
             
             # Postprocess classification
             predicted_label = postprocess_classification(cls_output)
